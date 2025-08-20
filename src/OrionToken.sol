@@ -42,6 +42,15 @@ contract OrionToken is ERC20 {
     }
 
     /**
+     * @notice Gets the principle balance of a user (tokens actually minted to them), excluding any accrued interest.
+     * @param _user The address of the user.
+     * @return The principle balance of the user.
+     */
+    function principleBalanceOf(address _user) external view returns (uint256) {
+        return super.balanceOf(_user); // Calls ERC20.balanceOf, which returns _balances[_user]
+    }
+
+    /**
      * @notice Mints tokens to a user, typically upon deposit.
      * @dev Also mints accrued interest and locks in the current global rate for the user.
      * @param _to The address to mint tokens to.
@@ -60,6 +69,21 @@ contract OrionToken is ERC20 {
     }
 
     /**
+     * @notice Burn the user tokens, e.g., when they withdraw from a vault or for cross-chain transfers.
+     * Handles burning the entire balance if _amount is type(uint256).max.
+     * @param _from The user address from which to burn tokens.
+     * @param _amount The amount of tokens to burn. Use type(uint256).max to burn all tokens.
+     */
+    function burn(address _from, uint256 _amount) external {
+        if (_amount == type(uint256).max) {
+            _amount = balanceOf(_from);
+        }
+
+        _mintAccruedInterest(_from);
+        _burn(_from, _amount);
+    }
+
+    /**
      * @notice Returns the current balance of an account, including accrued interest.
      * @param _user The address of the account.
      * @return The total balance including interest.
@@ -68,8 +92,59 @@ contract OrionToken is ERC20 {
         // get the current principles balance of the user (the number of tokens that have actually been minted to the user)
         // multiply the principal balance by the interest rate that has accumulated in the time since the balance was last updated
         // Return the balance of the user
-        return super.balanceOf(_user) * _caculatedUserAccumulatedInterestSinceLastUpdate(_user)
-            / PRECISION_FACTOR;
+        return super.balanceOf(_user) * _caculatedUserAccumulatedInterestSinceLastUpdate(_user) / PRECISION_FACTOR;
+    }
+
+    /**
+     * @notice Transfers tokens from the caller to a recipient.
+     * Accrued interest for both sender and recipient is minted before the transfer.
+     * If the recipient is new, they inherit the sender's interest rate.
+     * @param _recipient The address to transfer tokens to.
+     * @param _amount The amount of tokens to transfer. Can be type(uint256).max to transfer full balance.
+     * @return A boolean indicating whether the operation succeeded.
+     */
+    function transfer(address _recipient, uint256 _amount) public override returns (bool) {
+        _mintAccruedInterest(msg.sender);
+        _mintAccruedInterest(_recipient);
+        if (_amount == type(uint256).max) {
+            _amount = balanceOf(msg.sender);
+        }
+
+        bool success = super.transfer(_recipient, _amount);
+
+        // only set rate if recipient is truly new (no prior rate set)
+        if (balanceOf(_recipient) > 0 && s_userInterestRates[_recipient] == 0) {
+            s_userInterestRates[_recipient] = s_userInterestRates[msg.sender];
+        }
+
+        return success;
+    }
+
+    /**
+     * @notice Transfers tokens from one address to another, on behalf of the sender,
+     * provided an allowance is in place.
+     * Accrued interest for both sender and recipient is minted before the transfer.
+     * If the recipient is new, they inherit the sender's interest rate.
+     * @param _sender The address to transfer tokens from.
+     * @param _recipient The address to transfer tokens to.
+     * @param _amount The amount of tokens to transfer. Can be type(uint256).max to transfer full balance.
+     * @return A boolean indicating whether the operation succeeded.
+     */
+    function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
+        _mintAccruedInterest(_sender);
+        _mintAccruedInterest(_recipient);
+        if (_amount == type(uint256).max) {
+            _amount = balanceOf(_sender);
+        }
+
+        bool success = super.transferFrom(_sender, _recipient, _amount);
+
+        // only set rate if recipient is truly new (no prior rate set)
+        if (balanceOf(_recipient) > 0 && s_userInterestRates[_recipient] == 0) {
+            s_userInterestRates[_recipient] = s_userInterestRates[msg.sender];
+        }
+
+        return success;
     }
 
     function _caculatedUserAccumulatedInterestSinceLastUpdate(address _user)
@@ -102,19 +177,36 @@ contract OrionToken is ERC20 {
     /**
      * @dev Internal function to calculate and mint accrued interest for a user.
      * @dev Updates the user's last updated timestamp.
+     * @notice Mint the accrued interest to the user since the last time they interacted with the   protocol (e.g. burn, mint, transfer)
+     * @param _user The user to mint the accrued interest to
      * @param _user The address of the user.
      */
     function _mintAccruedInterest(address _user) internal {
         // (1) find their current balance of rebase tokens that have been minted to the user --> principle balance
-        uint256 currentBalance = balanceOf(_user);
+        uint256 prevPrincipleBalance = super.balanceOf(_user);
 
         // (2)calculate there current balance including any interest --> balanceOf(_user) + interest accrued
 
+        uint256 currentBalance = balanceOf(_user);
         // (3) calculate the number of tokens that need to be minted as interest to the user --> (2) - (1)
 
-        // call _mint to mint the interest tokens to the user
+        uint256 balanceIncreased = currentBalance - prevPrincipleBalance;
+
         // set the users last updated timestamp
         s_userLastUpdatedTimeStamp[_user] = block.timestamp;
+
+        // call _mint to mint the interest tokens to the user
+        if (balanceIncreased > 0) {
+            _mint(_user, balanceIncreased);
+        }
+    }
+
+    /**
+     * @notice Gets the current global interest rate for the token.
+     * @return The current global interest rate.
+     */
+    function getInterestRate() external view returns (uint256) {
+        return s_interestRate;
     }
 
     /**
