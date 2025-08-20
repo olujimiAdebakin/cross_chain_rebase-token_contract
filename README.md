@@ -1,32 +1,29 @@
-# OrionToken Smart Contract: An Elastic Rebase Token
+# **OrionToken: Cross-Chain Rebase Token**
 
-<p align="center">
-  <a href="https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract">
-    <img src="https://img.shields.io/badge/Solidity-0.8.26-blueviolet" alt="Solidity Version">
-  </a>
-  <a href="https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract">
-    <img src="https://img.shields.io/badge/Foundry-Framework-lightgray" alt="Foundry Framework">
-  </a>
-  <a href="https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract">
-    <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT">
-  </a>
-</p>
+## Overview
+This project implements the OrionToken, an innovative cross-chain rebase (elastic) token developed with **Solidity** and managed using **Foundry**. It dynamically adjusts user balances based on a decreasing interest rate, incentivizing deposits into associated vaults and offering a unique mechanism for value accrual.
 
-## Overview ✨
-The **OrionToken** project implements an innovative cross-chain rebase (elastic) token using **Solidity** and the **Foundry** development framework. This smart contract is designed to dynamically adjust user balances through an interest rate mechanism, incentivizing participation and rewarding long-term holders. It integrates with **OpenZeppelin Contracts** for robust and secure ERC20 functionalities.
+## Features
+*   ✨ **Elastic Supply Mechanism**: The token supply rebases (expands or contracts) based on a defined interest rate, allowing balances to change over time.
+*   🔒 **Decreasing Interest Rate**: The global interest rate can only be decreased, ensuring predictable and potentially deflationary mechanics for accrued interest.
+*   💸 **User-Specific Interest Rates**: Each user's accrued interest is calculated based on the global rate at their last interaction (deposit, transfer, burn).
+*   🔄 **Accrued Interest Minting**: Interest is automatically minted to a user's balance upon interactions like minting, burning, or transferring tokens.
+*   🛡️ **Role-Based Access Control**: Utilizes OpenZeppelin's `AccessControl` to manage permissions for sensitive operations like minting, burning, and setting interest rates.
+*   🔗 **Cross-Chain Compatibility**: Designed with cross-chain applications in mind, facilitating transfers and value synchronization across different blockchain environments.
 
-## Features 🚀
-*   **Elastic Supply**: Token supply rebases based on a globally set interest rate.
-*   **Dynamic Interest Rate**: Allows the contract owner to set a global interest rate that can only decrease, ensuring predictable value accrual.
-*   **User-Specific Interest Rates**: Users' accrued interest is calculated based on the global rate at their last interaction (deposit, transfer, burn).
-*   **Accrued Interest Minting**: Automatically mints accrued interest to users upon significant interactions (mint, burn, transfer), reflecting their updated balance.
-*   **Standard ERC20 Compliance**: Extends OpenZeppelin's `ERC20` contract, ensuring full compatibility with ERC20 standards.
-*   **Cross-Chain Capability**: Designed with cross-chain transfers in mind, allowing for burning on one chain and minting on another to maintain supply consistency.
+## Getting Started
 
-## Getting Started ⚙️
+To get a local copy up and running, follow these simple steps.
+
+### Prerequisites
+
+Ensure you have Foundry installed. If not, follow the official guide:
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
 
 ### Installation
-To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the Repository**:
     ```bash
@@ -34,152 +31,257 @@ To get a local copy up and running, follow these simple steps.
     cd cross_chain_rebase-token_contract
     ```
 
-2.  **Install Foundry**:
-    If you don't have Foundry installed, run:
-    ```bash
-    curl -L https://foundry.paradigm.xyz | bash
-    foundryup
-    ```
-
-3.  **Install Dependencies**:
+2.  **Install Dependencies**:
     The project uses Git submodules for OpenZeppelin contracts and Forge Standard Library.
     ```bash
-    forge install
+    git submodule update --init --recursive
     ```
-    This command initializes and updates the submodules specified in `.gitmodules`.
 
-4.  **Build the Project**:
-    Compile the smart contracts:
+3.  **Compile the Smart Contracts**:
+    Navigate to the project root and compile the contracts using Foundry:
     ```bash
     forge build
     ```
 
 ### Environment Variables
-This specific smart contract currently does not require any environment variables for local development or testing. However, for deployment to a blockchain network, you would typically need:
 
-*   `PRIVATE_KEY`: The private key of the deployer wallet. (e.g., `0x...`)
-*   `RPC_URL`: The RPC endpoint URL for the blockchain network. (e.g., `https://rpc.sepolia.org`)
+For local testing and deployment, you might need to set up the following environment variables. Create a `.env` file in the project root:
 
-## Contract Functions 📖
+```
+# RPC URL for the network you want to deploy to (e.g., Sepolia, Goerli)
+RPC_URL="https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"
 
-### `constructor()`
-Initializes the ERC20 token with "Orion Token" as its name and "ORT" as its symbol.
+# Private key of the deployer account (e.g., from your MetaMask or wallet)
+PRIVATE_KEY="YOUR_PRIVATE_KEY_HERE"
+```
 
-### `setInterestRate(uint256 _newInterestRate)`
-**Description**: Sets the global interest rate for the token. This function can only decrease the current interest rate. Access control mechanisms (e.g., `onlyOwner` or a governance module) should be added for production environments to restrict who can call this function.
+## API Documentation
+
+The OrionToken smart contract exposes several external and public functions for interacting with its rebase and token mechanics.
+
+### Contract Address
+The contract address will be determined upon deployment to a specific blockchain network.
+
+### Functions
+
+#### `constructor()`
+Initializes the ERC20 token with "Orion Token" as its name and "ORT" as its symbol. Sets the deployer as the contract owner.
 
 **Parameters**:
-*   `_newInterestRate` (uint256): The new interest rate to set (e.g., `5e16` for 5%).
+None.
+
+**Events**:
+None explicitly defined for constructor, but ERC20 events may be implicitly emitted for initial supply if applicable.
+
+#### `function grantMintAndBurnRole(address _account) external onlyOwner`
+Grants the `MINT_AND_BURN_ROLE` to a specified account, allowing them to call `mint` and `burn` functions. Only the contract owner can call this function.
+
+**Parameters**:
+- `_account` (address): The address to grant the role to.
 
 **Errors**:
-*   `OrionToken_InterestRateCanOnlyDecrease`: If `_newInterestRate` is greater than the current `s_interestRate`.
+- `Ownable: caller is not the owner`: If the caller is not the contract owner.
 
-### `principleBalanceOf(address _user)`
-**Description**: Returns the principle balance of a user, which represents the tokens actually minted to them, excluding any accrued interest.
-
-**Parameters**:
-*   `_user` (address): The address of the user.
-
-**Returns**:
-*   `uint256`: The principle balance of the user.
-
-### `mint(address _to, uint256 _amount)`
-**Description**: Mints new tokens to a specified address. This function also triggers the minting of any accrued interest for the recipient and locks in the current global interest rate for them.
+#### `function setInterestRate(uint256 _newInterestRate) external onlyOwner`
+Sets the global interest rate for the contract. The new interest rate can only be less than or equal to the current interest rate.
 
 **Parameters**:
-*   `_to` (address): The address to mint tokens to.
-*   `_amount` (uint256): The principal amount of tokens to mint.
+- `_newInterestRate` (uint256): The new interest rate to set (e.g., `5e16` for 5%).
+
+**Events**:
+- `InterestRateSet(uint256 newInterestRate)`: Emitted when the interest rate is successfully updated.
 
 **Errors**:
-*   `Amount must be greater than zero`: If `_amount` is 0.
-*   `Cannot mint to the zero address`: If `_to` is `address(0)`.
+- `OrionToken_InterestRateCanOnlyDecrease(uint256 oldInterestRate, uint256 newInterestRate, string message)`: If `_newInterestRate` is greater than the current `s_interestRate`.
+- `Ownable: caller is not the owner`: If the caller is not the contract owner.
 
-### `burn(address _from, uint256 _amount)`
-**Description**: Burns tokens from a user's balance. This function automatically handles burning the entire balance if `_amount` is `type(uint256).max`. It also mints any accrued interest for the user before burning.
-
-**Parameters**:
-*   `_from` (address): The address from which to burn tokens.
-*   `_amount` (uint256): The amount of tokens to burn. Use `type(uint256).max` to burn the entire balance.
-
-### `balanceOf(address _user)`
-**Description**: Returns the current balance of an account, *including* any accrued interest since the last update. This overrides the standard ERC20 `balanceOf` to provide the elastic token's total balance.
+#### `function principleBalanceOf(address _user) external view returns (uint256)`
+Retrieves the principal balance of a user (tokens actually minted to them), excluding any accrued interest. This is the raw ERC20 balance.
 
 **Parameters**:
-*   `_user` (address): The address of the account.
+- `_user` (address): The address of the user.
 
-**Returns**:
-*   `uint256`: The total balance of the user, including accrued interest.
+**Response**:
+- `uint256`: The principal balance of the user.
 
-### `transfer(address _recipient, uint256 _amount)`
-**Description**: Transfers tokens from the caller to a recipient. Before the transfer, accrued interest for both the sender and recipient is minted. If the recipient is new (has no prior interest rate set), they inherit the sender's interest rate.
-
-**Parameters**:
-*   `_recipient` (address): The address to transfer tokens to.
-*   `_amount` (uint256): The amount of tokens to transfer. Can be `type(uint256).max` to transfer the full balance.
-
-**Returns**:
-*   `bool`: `true` if the transfer was successful.
-
-### `transferFrom(address _sender, address _recipient, uint256 _amount)`
-**Description**: Transfers tokens from one address to another on behalf of the `msg.sender`, provided an allowance has been approved. Similar to `transfer`, accrued interest for both sender and recipient is minted before the transfer, and new recipients inherit the sender's interest rate.
+#### `function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE)`
+Mints new tokens to a specified address. Before minting, it calculates and mints any accrued interest for the `_to` address and locks in the current global interest rate for them.
 
 **Parameters**:
-*   `_sender` (address): The address to transfer tokens from.
-*   `_recipient` (address): The address to transfer tokens to.
-*   `_amount` (uint256): The amount of tokens to transfer. Can be `type(uint256).max` to transfer the full balance.
+- `_to` (address): The address to mint tokens to.
+- `_amount` (uint256): The principal amount of tokens to mint. Must be greater than zero.
 
-**Returns**:
-*   `bool`: `true` if the transfer was successful.
+**Events**:
+- `Transfer(address indexed from, address indexed to, uint256 value)`: Emitted for the principal amount minted and any accrued interest minted.
 
-### `getInterestRate()`
-**Description**: Retrieves the current global interest rate set for the token.
+**Errors**:
+- `Amount must be greater than zero`: If `_amount` is 0.
+- `Cannot mint to the zero address`: If `_to` is `address(0)`.
+- `AccessControl: sender missing role`: If the caller does not have `MINT_AND_BURN_ROLE`.
 
-**Returns**:
-*   `uint256`: The current global interest rate.
-
-### `getUserInterestRate(address _user)`
-**Description**: Retrieves the specific interest rate that was locked in for a given user at their last interaction.
+#### `function burn(address _from, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE)`
+Burns tokens from a specified address. Before burning, it calculates and mints any accrued interest for the `_from` address. If `_amount` is `type(uint256).max`, the entire balance of `_from` (including accrued interest) is burned.
 
 **Parameters**:
-*   `_user` (address): The address of the user.
+- `_from` (address): The user address from which to burn tokens.
+- `_amount` (uint256): The amount of tokens to burn. Use `type(uint256).max` to burn all tokens.
 
-**Returns**:
-*   `uint256`: The user's specific locked-in interest rate.
+**Events**:
+- `Transfer(address indexed from, address indexed to, uint256 value)`: Emitted for any accrued interest minted, and then for the burned amount (from `_from` to `address(0)`).
 
-## Technologies Used 🛠️
+**Errors**:
+- `ERC20: burn amount exceeds balance`: If `_amount` is greater than `balanceOf(_from)`.
+- `AccessControl: sender missing role`: If the caller does not have `MINT_AND_BURN_ROLE`.
 
-| Technology      | Description                               | Link                                                                        |
-| :-------------- | :---------------------------------------- | :-------------------------------------------------------------------------- |
-| **Solidity**    | Smart Contract Language                   | [soliditylang.org](https://soliditylang.org/)                               |
-| **Foundry**     | Smart Contract Development Framework      | [book.getfoundry.sh](https://book.getfoundry.sh/)                           |
-| **OpenZeppelin**| Secure Smart Contract Libraries           | [openzeppelin.com/contracts](https://docs.openzeppelin.com/contracts/5.x/)  |
+#### `function balanceOf(address _user) public view override returns (uint256)`
+Returns the current total balance of an account, including any accrued interest. This function overrides the standard ERC20 `balanceOf` to provide the elastic balance.
 
-## Contributing 🤝
-We welcome contributions to the OrionToken project! To contribute:
+**Parameters**:
+- `_user` (address): The address of the account.
 
-*   **Fork the repository** on GitHub.
-*   **Clone your forked repository** locally.
-*   **Create a new branch** for your feature or bug fix: `git checkout -b feature/your-feature-name`.
-*   **Implement your changes**, ensuring they adhere to the existing code style.
-*   **Write comprehensive tests** for your new code to maintain high code quality.
-*   **Run existing tests** to ensure no regressions: `forge test`.
-*   **Commit your changes** with a clear and concise message.
-*   **Push your branch** to your forked repository.
-*   **Open a Pull Request** against the `main` branch of the original repository, describing your changes in detail.
+**Response**:
+- `uint256`: The total balance including accrued interest.
 
-## License 📄
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract/blob/main/LICENSE) file for details.
+#### `function transfer(address _recipient, uint256 _amount) public override returns (bool)`
+Transfers tokens from the caller (`msg.sender`) to a recipient. Accrued interest for both the sender and recipient is minted *before* the transfer. If the recipient is new (no prior interest rate set), they inherit the sender's interest rate. If `_amount` is `type(uint256).max`, the full balance of `msg.sender` (including accrued interest) is transferred.
 
-## Author Info 👤
-**Adebakin Olujimi**
-A passionate Blockchain Developer with a focus on creating secure and efficient decentralized applications.
+**Parameters**:
+- `_recipient` (address): The address to transfer tokens to.
+- `_amount` (uint256): The amount of tokens to transfer. Use `type(uint256).max` to transfer the full balance.
 
-*   **LinkedIn**: [Your LinkedIn Profile](https://linkedin.com/in/your_username)
-*   **Twitter**: [Your Twitter Profile](https://twitter.com/your_username)
+**Response**:
+- `bool`: `true` if the operation succeeded.
+
+**Events**:
+- `Transfer(address indexed from, address indexed to, uint256 value)`: Emitted for any accrued interest minted to sender/recipient, and then for the actual transfer.
+
+**Errors**:
+- `ERC20: transfer amount exceeds balance`: If `_amount` is greater than `balanceOf(msg.sender)`.
+- `ERC20: transfer to the zero address`: If `_recipient` is `address(0)`.
+
+#### `function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool)`
+Transfers tokens from one address (`_sender`) to another (`_recipient`) on behalf of the caller, provided an allowance is in place. Accrued interest for both sender and recipient is minted *before* the transfer. If the recipient is new (no prior interest rate set), they inherit the sender's interest rate. If `_amount` is `type(uint256).max`, the full balance of `_sender` (including accrued interest) is transferred.
+
+**Parameters**:
+- `_sender` (address): The address to transfer tokens from.
+- `_recipient` (address): The address to transfer tokens to.
+- `_amount` (uint256): The amount of tokens to transfer. Use `type(uint256).max` to transfer the full balance.
+
+**Response**:
+- `bool`: `true` if the operation succeeded.
+
+**Events**:
+- `Transfer(address indexed from, address indexed to, uint256 value)`: Emitted for any accrued interest minted to sender/recipient, and then for the actual transfer.
+- `Approval(address indexed owner, address indexed spender, uint256 value)`: Emitted if allowance is changed.
+
+**Errors**:
+- `ERC20: insufficient allowance`: If the caller does not have enough allowance from `_sender`.
+- `ERC20: transfer amount exceeds balance`: If `_amount` is greater than `balanceOf(_sender)`.
+- `ERC20: transfer to the zero address`: If `_recipient` is `address(0)`.
+
+#### `function getInterestRate() external view returns (uint256)`
+Retrieves the current global interest rate for the token.
+
+**Parameters**:
+None.
+
+**Response**:
+- `uint256`: The current global interest rate.
+
+#### `function getUserInterestRate(address _user) external view returns (uint256)`
+Retrieves the specific interest rate locked in for a given user. This is the rate at which their balance accrues interest.
+
+**Parameters**:
+- `_user` (address): The address of the user.
+
+**Response**:
+- `uint256`: The user's specific interest rate.
+
+## Usage
+
+After deploying the `OrionToken` contract to a blockchain network (e.g., using `forge script` for deployment), you can interact with it using a web3 library (like Ethers.js or Web3.js) or directly via a block explorer (e.g., Etherscan).
+
+### Example Workflow:
+
+1.  **Deploy the Contract**:
+    ```bash
+    # Example deployment command (replace with your actual script)
+    forge script script/DeployOrionToken.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
+    ```
+    (Note: A `DeployOrionToken.s.sol` script would need to be created in the `script` directory for this command to work).
+
+2.  **Grant Mint/Burn Role**:
+    The contract owner (`msg.sender` during deployment) can grant the `MINT_AND_BURN_ROLE` to a specific address, e.g., a vault contract or an authorized backend service.
+    ```solidity
+    // Example interaction from another contract or a wallet
+    OrionToken(tokenAddress).grantMintAndBurnRole(vaultAddress);
+    ```
+
+3.  **Minting Tokens (e.g., upon user deposit into a vault)**:
+    A wallet or a role-granted contract can mint tokens. This will also update the user's interest rate and mint any prior accrued interest.
+    ```solidity
+    // Example call
+    OrionToken(tokenAddress).mint(userAddress, 100e18); // Mints 100 ORT tokens
+    ```
+
+4.  **Checking Balance (including accrued interest)**:
+    Users can check their total balance, which dynamically reflects accrued interest.
+    ```solidity
+    uint256 userTotalBalance = OrionToken(tokenAddress).balanceOf(userAddress);
+    ```
+
+5.  **Burning Tokens (e.g., upon user withdrawal or cross-chain transfer)**:
+    Role-granted entities can burn tokens from a user.
+    ```solidity
+    // Burn a specific amount
+    OrionToken(tokenAddress).burn(userAddress, 50e18);
+    // Burn all tokens
+    OrionToken(tokenAddress).burn(userAddress, type(uint256).max);
+    ```
+
+6.  **Transferring Tokens**:
+    Standard ERC20 transfers are supported, with the added logic of updating sender's and recipient's accrued interest.
+    ```solidity
+    OrionToken(tokenAddress).transfer(anotherUserAddress, 25e18);
+    ```
+
+## Technologies Used
+
+| Technology         | Description                                        | Link                                                                        |
+| :----------------- | :------------------------------------------------- | :-------------------------------------------------------------------------- |
+| 𝗦𝗼𝗹𝗶𝗱𝗶𝘁𝘆          | Smart contract programming language                | [Solidity Lang](https://soliditylang.org/)                                  |
+| 𝗙𝗼𝘂𝗻𝗱𝗿𝘆            | blazing-fast, portable, and modular toolkit for Ethereum application development | [Foundry](https://getfoundry.sh/)                                           |
+| 𝗢𝗽𝗲𝗻𝗭𝗲𝗽𝗽𝗲𝗹𝗶𝗻 𝗖𝗼𝗻𝘁𝗿𝗮𝗰𝘁𝘀 | Secure, community-vetted smart contract libraries | [OpenZeppelin](https://openzeppelin.com/contracts/)                         |
+
+## Contributing
+
+Contributions are welcome! If you'd like to contribute, please follow these steps:
+
+1.  🍴 Fork the repository.
+2.  🌿 Create a new branch (`git checkout -b feature/AmazingFeature`).
+3.  ⚙️ Make your changes and ensure tests pass (`forge test`).
+4.  ➕ Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+5.  ⬆️ Push to the branch (`git push origin feature/AmazingFeature`).
+6.  🗣️ Open a pull request.
+
+Please ensure your code adheres to the existing style and includes appropriate tests.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
+
+## Author Info
+
+Adebakin Olujimi
+*   LinkedIn: [Your LinkedIn Profile](https://www.linkedin.com/in/your-profile)
+*   Twitter: [Your Twitter Handle](https://twitter.com/your-handle)
 
 ---
 
-[![Solidity](https://img.shields.io/badge/Language-Solidity-purple)](https://soliditylang.org/)
-[![Foundry](https://img.shields.io/badge/Framework-Foundry-lightgray)](https://book.getfoundry.sh/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+### Built With
+
+[![Solidity](https://img.shields.io/badge/Solidity-%23363636.svg?style=for-the-badge&logo=solidity&logoColor=white)](https://soliditylang.org/)
+[![Foundry](https://img.shields.io/badge/Foundry-black?style=for-the-badge&logo=foundry&logoColor=white)](https://getfoundry.sh/)
+[![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-4E5057?style=for-the-badge&logo=openzeppelin&logoColor=white)](https://openzeppelin.com/contracts/)
+
 [![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://www.npmjs.com/package/dokugen)
