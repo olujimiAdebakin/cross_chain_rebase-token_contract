@@ -6,7 +6,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-/*
+/** 
 * @title OrionToken an implememntation of a rebase (elastic token);
 * @author Adebakin Olujimi
 * @notice This is a cross-chain rebase token (OrionToken) that Incentivises users to deposit into a vault
@@ -16,7 +16,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 contract OrionToken is ERC20, Ownable, AccessControl {
     error OrionToken_InterestRateCanOnlyDecrease(uint256 oldInterestRate, uint256 newInterestRate, string message);
 
-    uint256 private s_interestRate = 5e16; // 5% interest rate
+    uint256 private s_interestRate = 5e10; // 5% interest rate
     mapping(address => uint256) private s_userInterestRates; // User-specific interest rates
     mapping(address => uint256) private s_userLastUpdatedTimeStamp; // Last updated timestamp for each user
     uint256 private constant PRECISION_FACTOR = 1e18;
