@@ -26,6 +26,8 @@ contract OrionTokenTest is Test {
             vault = new Vault((IOrionToken(address(orionToken))));
             orionToken.grantMintAndBurnRole(address(vault));
            (bool success,) = payable(address(vault)).call{value: 1e18}("");
+           success;
+      //      require(success, "Failed to send Ether");
             vm.stopPrank();
             // require(success, "Failed to send Ether");
       }
@@ -55,6 +57,28 @@ contract OrionTokenTest is Test {
             assertGt(endBalance, newBalance);
 
             assertApproxEqAbs(endBalance - newBalance, newBalance - startingBalance, 1);
+            console.log("END BALANCE", endBalance);
+            vm.stopPrank();
+      }
+
+
+      function testRedeemStraightAway(uint256 amount) public {
+            // fuzz the amount
+            amount = bound(amount, 1e5, type(uint96).max);
+
+            // 1. deposit amount ETH
+            vm.startPrank(user);
+            vm.deal(user, amount);
+            vault.deposit{value: amount}();
+            // 2. check our rebase Token balance for user
+            uint256 startingBalance = orionToken.balanceOf(user);
+            console.log("STARTING BALANCE", startingBalance);
+            assertEq(startingBalance, amount);
+            // 3. redeem straight away
+            vault.redeem(amount);
+            // 4. check our rebase Token balance for user
+            uint256 endBalance = orionToken.balanceOf(user);
+            assertEq(endBalance, 0);
             console.log("END BALANCE", endBalance);
             vm.stopPrank();
       }
