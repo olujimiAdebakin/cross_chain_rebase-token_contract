@@ -34,7 +34,7 @@ contract Vault{
     event Redeem(address indexed redeemer, uint256 amount);
 
 
-    constructor (IOrionToken _orionToken) {
+    constructor (IOrionToken _orionToken) payable {
       i_orionToken = _orionToken;
     }
 
@@ -53,6 +53,7 @@ contract Vault{
       emit Deposit(msg.sender, msg.value);
     }
 
+
       /**
      * @notice Allows a user to burn their RebaseTokens and receive a corresponding amount of ETH.
      * @param _amount The amount of RebaseTokens to redeem.
@@ -69,6 +70,7 @@ contract Vault{
 
        emit Redeem(msg.sender, _amount);
     }
+    
 
         /**
      * @notice Gets the address of the RebaseToken contract associated with this vault.

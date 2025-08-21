@@ -1,150 +1,189 @@
-# Orion Rebase Token & Vault Contracts 🚀
+# OrionToken: Cross-Chain Rebase Token & Vault 🚀
 
-## Overview
-This project implements a sophisticated rebase (elastic supply) ERC-20 token, `OrionToken`, designed to incentivize user deposits into an associated `Vault` contract. The system allows for dynamic adjustments to the token supply based on a unique interest rate mechanism, enhancing token economics within a decentralized finance (DeFi) context.
+This project introduces `OrionToken`, an innovative elastic (rebase) token designed to incentivize user engagement and deposits into an accompanying `Vault` contract. It dynamically adjusts user balances based on accrued interest, ensuring a unique and rewarding experience for participants in the decentralized ecosystem.
 
-## Features
--   **Elastic Supply (Rebase) Mechanism**: The `OrionToken` dynamically adjusts its supply by minting accrued interest to user balances based on time elapsed and individual interest rates.
--   **User-Specific Interest Rates**: Each user locks in the global interest rate at the time of their last interaction (mint, burn, transfer), ensuring predictable growth for their holdings.
--   **Controlled Interest Rate Decrement**: The global interest rate for the `OrionToken` can only be decreased by the contract owner, providing a controlled deflationary or stabilization mechanism.
--   **Role-Based Access Control**: `OrionToken` employs OpenZeppelin's `AccessControl` to manage `MINT_AND_BURN_ROLE` permissions, ensuring only authorized entities (like the `Vault`) can modify token supply.
--   **Decentralized Vault**: The `Vault` contract facilitates seamless deposits of ETH in exchange for `OrionToken` and redemption of `OrionToken` back into ETH, maintaining a 1:1 peg.
--   **Owner & Access Control**: Utilizes OpenZeppelin's `Ownable` and `AccessControl` for secure management of critical functions, such as setting interest rates and granting mint/burn roles.
+## Installation
 
-## Getting Started
-
-To get a copy of this project up and running on your local machine, follow these steps.
+To get this project up and running locally, follow these steps:
 
 ### Prerequisites
-Ensure you have [Foundry](https://getfoundry.sh/) installed. Foundry is a blazing-fast, portable, and modular toolkit for Ethereum application development written in Rust.
+Before you begin, ensure you have [Foundry](https://getfoundry.sh/) installed. If not, you can install it using `foundryup`:
 
 ```bash
-curl -L https://foundry.sh | bash
+curl -L https://foundry.paradigm.xyz | bash
 foundryup
 ```
 
-### Installation
+### Clone the Repository
+Start by cloning the project repository to your local machine:
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract.git
-    cd cross_chain_rebase-token_contract
-    ```
+```bash
+git clone https://github.com/olujimiAdebakin/cross_chain_rebase-token_contract.git
+cd cross_chain_rebase-token_contract
+```
 
-2.  **Install Dependencies**:
-    This project uses Git submodules for its dependencies, primarily OpenZeppelin Contracts and Forge Standard Library.
-    ```bash
-    forge update
-    ```
+### Install Dependencies
+This project uses Git submodules for its dependencies (Forge Standard Library and OpenZeppelin Contracts). Initialize and update them:
 
-3.  **Build the Contracts**:
-    Compile the smart contracts using Foundry.
-    ```bash
-    forge build
-    ```
+```bash
+forge install
+```
 
-### Environment Variables
-For deployment and interaction, you might need to set up environment variables.
-Create a `.env` file in the root directory of the project with the following (example values):
+### Build the Project
+Compile the smart contracts to ensure everything is set up correctly:
 
-```env
-PRIVATE_KEY=0x... # Your private key for deployment
-RPC_URL=https://eth-sepolia.g.alchemy.com/v2/... # Your RPC URL for a network (e.g., Sepolia)
+```bash
+forge build
 ```
 
 ## Usage
 
-This project consists of Solidity smart contracts. To use them, you typically deploy them to an Ethereum-compatible blockchain and interact with their functions.
+This project consists of two core smart contracts: `OrionToken.sol` (the rebase token) and `Vault.sol` (the ETH deposit/redemption vault). Interaction typically involves deploying these contracts and then calling their public functions.
 
-1.  **Deploying Contracts**:
-    You can deploy the `OrionToken` and `Vault` contracts using Foundry's `forge create` command or by writing a deployment script.
+### Deployment
+To deploy the contracts, you would generally use a Foundry script or a deployment framework. The `OrionToken` must be deployed first, and its address then passed to the `Vault` constructor.
 
-    *Example Deployment (Simplified, requires `PRIVATE_KEY` and `RPC_URL` in `.env`):*
-
-    First, deploy `OrionToken`:
-    ```bash
-    # Example for deploying OrionToken (replace <Your_Private_Key> and <Your_RPC_URL>)
-    # forge create src/OrionToken.sol:OrionToken --private-key <Your_Private_Key> --rpc-url <Your_RPC_URL>
-    # Note: Use a deployment script for production deployments for better management
+1.  **Deploy `OrionToken`**:
+    ```solidity
+    // Example pseudocode for deployment
+    OrionToken orionToken = new OrionToken();
     ```
-    Once `OrionToken` is deployed, note its address.
-
-    Then, deploy `Vault`, passing the deployed `OrionToken` address to its constructor:
-    ```bash
-    # Example for deploying Vault (replace <OrionToken_Address>, <Your_Private_Key>, <Your_RPC_URL>)
-    # forge create src/Vault.sol:Vault --constructor-args <OrionToken_Address> --private-key <Your_Private_Key> --rpc-url <Your_RPC_URL>
+2.  **Deploy `Vault`**:
+    ```solidity
+    // Pass the deployed OrionToken address
+    Vault vault = new Vault(orionToken);
     ```
-
-2.  **Granting Mint/Burn Role**:
-    After deploying both contracts, the `Vault` contract needs the `MINT_AND_BURN_ROLE` on the `OrionToken` contract to be able to mint tokens upon deposit and burn them upon redemption. This must be done by the `OrionToken`'s owner.
-
-    ```bash
-    # Interacting with OrionToken (replace <OrionToken_Address>, <Vault_Address>, <Your_Private_Key>, <Your_RPC_URL>)
-    # forge script --rpc-url <Your_RPC_URL> --private-key <Your_Private_Key> --broadcast YourDeploymentScript.s.sol --sig "grantMintAndBurnRole(address)" <Vault_Address>
-    # Or, using cast for direct interaction if you know the ABI and deployed addresses:
-    # cast send <OrionToken_Address> "grantMintAndBurnRole(address)" <Vault_Address> --private-key <Your_Private_Key> --rpc-url <Your_RPC_URL>
+3.  **Grant Role**: The `Vault` contract needs the `MINT_AND_BURN_ROLE` on the `OrionToken` to be able to mint and burn tokens. This step is crucial for the `deposit` and `redeem` functionalities of the Vault.
+    ```solidity
+    // Call this from the OrionToken owner account
+    orionToken.grantMintAndBurnRole(address(vault));
     ```
 
-3.  **Interacting with the Vault**:
+### Interacting with Contracts
 
-    *   **Deposit ETH**: Send ETH to the `deposit` function of the `Vault` contract. This will mint `OrionToken`s to your address.
+Here are the key interactions with the deployed contracts:
+
+#### `Vault` Contract Interactions
+
+*   **Deposit ETH**: Users can deposit ETH into the Vault, which mints an equivalent amount of `OrionToken` to their address.
+    *   **Function**: `deposit()`
+    *   **Request**: Send ETH directly to the `deposit()` function.
         ```solidity
-        // Example Solidity interaction
-        Vault vault = Vault(<Vault_Address>);
-        vault.deposit{value: 1 ether}(); // Deposits 1 ETH, gets 1 ORT
+        // Example: Sending 1 ETH to the vault
+        vault.deposit{value: 1 ether}();
         ```
+    *   **Response**: Emits a `Deposit` event with the user's address and the amount deposited.
 
-    *   **Redeem OrionToken**: Burn your `OrionToken`s via the `redeem` function of the `Vault` contract to receive ETH back.
+*   **Redeem Tokens for ETH**: Users can burn their `OrionToken` to receive ETH back from the Vault.
+    *   **Function**: `redeem(uint256 _amount)`
+    *   **Request**: Call `redeem` with the amount of `OrionToken` to burn. Ensure the Vault has enough ETH.
         ```solidity
-        // Example Solidity interaction
-        IOrionToken orionToken = IOrionToken(<OrionToken_Address>);
-        orionToken.approve(<Vault_Address>, 100); // Approve Vault to spend your ORT
-        Vault vault = Vault(<Vault_Address>);
-        vault.redeem(100); // Redeems 100 ORT for 100 ETH
+        // Example: Redeeming 100 OrionTokens
+        vault.redeem(100 * 1e18); // Assuming 18 decimals for OrionToken
         ```
+    *   **Response**: Transfers ETH back to the user. Emits a `Redeem` event.
+    *   **Errors**: `Vault__Redeem__FailedToSendETH` if the ETH transfer fails.
 
-    *   **Check Balances**:
-        `balanceOf(address)` on `OrionToken` will show your effective balance including accrued interest.
-        `principleBalanceOf(address)` will show the base amount of tokens minted to you, excluding interest.
+#### `OrionToken` Contract Interactions
 
-4.  **Running Tests**:
-    The project includes unit tests written with Foundry.
-    ```bash
-    forge test
-    ```
+*   **Get User Balance**: Retrieve a user's balance, which includes accrued interest.
+    *   **Function**: `balanceOf(address _user)`
+    *   **Request**: Pass the user's address.
+        ```solidity
+        uint256 balance = orionToken.balanceOf(msg.sender);
+        ```
+    *   **Response**: Returns `uint256` representing the total token balance including interest.
+
+*   **Get Principal Balance**: Retrieve the base balance of tokens minted, excluding accrued interest.
+    *   **Function**: `principleBalanceOf(address _user)`
+    *   **Request**: Pass the user's address.
+        ```solidity
+        uint256 principal = orionToken.principleBalanceOf(msg.sender);
+        ```
+    *   **Response**: Returns `uint256` representing the base token balance.
+
+*   **Set Global Interest Rate**: The contract owner can adjust the global interest rate.
+    *   **Function**: `setInterestRate(uint256 _newInterestRate)`
+    *   **Request**: Call with a new interest rate (e.g., `5 * 1e16` for 5% when `PRECISION_FACTOR` is `1e18`).
+        ```solidity
+        orionToken.setInterestRate(0.03 * 1e18); // Sets interest rate to 3%
+        ```
+    *   **Response**: Emits an `InterestRateSet` event.
+    *   **Errors**: `OrionToken_InterestRateCanOnlyDecrease` if `_newInterestRate` is greater than the current rate.
+
+*   **Get Global Interest Rate**:
+    *   **Function**: `getInterestRate()`
+    *   **Response**: Returns `uint256` representing the current global interest rate.
+
+*   **Get User-Specific Interest Rate**: Each user's interest rate is locked in at the time of their first interaction (deposit/mint).
+    *   **Function**: `getUserInterestRate(address _user)`
+    *   **Request**: Pass the user's address.
+    *   **Response**: Returns `uint256` representing the user's specific interest rate.
+
+## Features
+
+This project incorporates several key features designed for a robust and dynamic token economy:
+
+*   **Elastic/Rebase Token (OrionToken)**: Implements an elastic supply mechanism where token balances can increase or decrease based on an interest rate, without requiring users to actively claim rewards.
+*   **Dynamic Interest Accrual**: Balances automatically accrue interest over time, calculated linearly based on a user's locked-in interest rate and the time elapsed since their last interaction.
+*   **User-Specific Interest Rates**: Each user's interest rate is fixed at the global rate prevalent at their first deposit or token acquisition, providing predictability.
+*   **Controlled Interest Rate Decrement**: The global interest rate can only be decreased by the contract owner, ensuring a deflationary or stable environment over time.
+*   **Access Control**: Utilizes OpenZeppelin's `Ownable` and `AccessControl` for managing critical functions like setting interest rates (`onlyOwner`) and controlling mint/burn operations (`MINT_AND_BURN_ROLE`).
+*   **ETH Vault Integration**: A dedicated `Vault` contract allows users to seamlessly deposit ETH to mint `OrionToken` and burn `OrionToken` to redeem ETH, establishing a direct peg.
+*   **Secure ETH Redemption**: The `redeem` function uses a low-level `.call` for ETH transfer, adhering to the Checks-Effects-Interactions pattern for enhanced security.
 
 ## Technologies Used
 
-| Technology         | Category           | Description                                        |
-| :----------------- | :----------------- | :------------------------------------------------- |
-| **Solidity**       | Smart Contract Language | The primary language for writing smart contracts. |
-| **Foundry**        | Development Toolkit | A fast, powerful, and flexible toolkit for Ethereum development, testing, and deployment. |
-| **OpenZeppelin Contracts** | Smart Contract Library | Industry-standard, secure, and audited smart contract implementations (ERC20, Ownable, AccessControl). |
+| Technology         | Description                                                      |
+| :----------------- | :--------------------------------------------------------------- |
+| **Solidity**       | Primary language for smart contract development.                 |
+| **Foundry**        | Blazing fast, portable, and modular toolkit for Ethereum application development. |
+| **OpenZeppelin Contracts** | Secure and community-audited smart contracts for common functionalities (ERC20, Ownable, AccessControl). |
 
 ## Contributing
 
-We welcome contributions to the Orion Rebase Token & Vault project! To contribute:
+We welcome contributions! If you have suggestions or want to improve the project, please follow these steps:
 
--   ⭐ Fork this repository.
--   💡 Create a new branch for your feature or bug fix: `git checkout -b feature/your-feature-name` or `bugfix/fix-description`.
--   🛠️ Make your changes and ensure your code adheres to existing style guidelines.
--   🧪 Write and run tests to ensure your changes work as expected and don't introduce regressions.
--   ⬆️ Commit your changes with a clear and concise message.
--   🚀 Push your branch to your forked repository.
--   ➡️ Open a pull request against the `main` branch of this repository.
+✨ **Fork the Repository**: Start by forking this repository to your GitHub account.
+
+💻 **Clone Your Fork**: Clone the forked repository to your local machine:
+```bash
+git clone https://github.com/YOUR_USERNAME/cross_chain_rebase-token_contract.git
+```
+
+🌿 **Create a Branch**: Create a new branch for your feature or bug fix:
+```bash
+git checkout -b feature/your-feature-name
+```
+
+🚀 **Make Your Changes**: Implement your changes and ensure tests pass.
+
+➕ **Add & Commit**: Stage your changes and commit them with a descriptive message:
+```bash
+git add .
+git commit -m "feat: Add new feature"
+```
+
+⬆️ **Push to Your Fork**: Push your changes to your fork on GitHub:
+```bash
+git push origin feature/your-feature-name
+```
+
+🔄 **Open a Pull Request**: Create a pull request from your branch to the `main` branch of the original repository. Describe your changes clearly.
 
 ## License
 
-This project is licensed under the MIT License. The SPDX license identifier used is `MIT`.
+Distributed under the MIT License. See the project for details.
 
 ## Author Info
 
-Connect with the author of this project:
-
-**Adebakin Olujimi**
-- LinkedIn: [Your_LinkedIn_Profile]
-- Twitter: [Your_Twitter_Handle]
+👋 **Adebakin Olujimi**
+*   **LinkedIn**: [Your LinkedIn Username] (e.g., `linkedin.com/in/adebakin-olujimi`)
+*   **Twitter**: [Your Twitter Handle] (e.g., `@adebakin_olujimi`)
 
 ---
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity)](https://soliditylang.org/)
+[![Foundry](https://img.shields.io/badge/Powered%20By-Foundry-F94A2D?logo=foundry)](https://getfoundry.sh/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://www.npmjs.com/package/dokugen)
