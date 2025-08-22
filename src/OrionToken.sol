@@ -6,12 +6,12 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-/** 
-* @title OrionToken an implememntation of a rebase (elastic token);
-* @author Adebakin Olujimi
-* @notice This is a cross-chain rebase token (OrionToken) that Incentivises users to deposit into a vault
-* @notice The intereste rate in the smart contract can only decrease and the rebase token can
-* @notice Each users will have there own interest rate that is the global interest rate at the time of depositing
+/**
+ * @title OrionToken an implememntation of a rebase (elastic token);
+ * @author Adebakin Olujimi
+ * @notice This is a cross-chain rebase token (OrionToken) that Incentivises users to deposit into a vault
+ * @notice The intereste rate in the smart contract can only decrease and the rebase token can
+ * @notice Each users will have there own interest rate that is the global interest rate at the time of depositing
  */
 contract OrionToken is ERC20, Ownable, AccessControl {
     error OrionToken_InterestRateCanOnlyDecrease(uint256 oldInterestRate, uint256 newInterestRate, string message);
@@ -27,7 +27,6 @@ contract OrionToken is ERC20, Ownable, AccessControl {
 
     constructor() ERC20("Orion Token", "ORT") Ownable(msg.sender) {}
 
-
     function grantMintAndBurnRole(address _account) external onlyOwner {
         _grantRole(MINT_AND_BURN_ROLE, _account);
     }
@@ -37,7 +36,7 @@ contract OrionToken is ERC20, Ownable, AccessControl {
      * @param _newInterestRate The new interest rate to set.
      * @dev The interest rate can only decrease. Add access control (e.g., onlyOwner).
      */
-    function setInterestRate(uint256 _newInterestRate) external onlyOwner{
+    function setInterestRate(uint256 _newInterestRate) external onlyOwner {
         //   set the intereste rate for the rebase token
         //   This function can be modified to set the interest rate based on some logic
         if (_newInterestRate > s_interestRate) {
@@ -65,7 +64,7 @@ contract OrionToken is ERC20, Ownable, AccessControl {
      * @param _to The address to mint tokens to.
      * @param _amount The principal amount of tokens to mint.
      */
-    function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE){
+    function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
         _mintAccruedInterest(_to);
         s_userInterestRates[_to] = s_interestRate; // Set user's interest rate to the current global rate
 
